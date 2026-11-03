@@ -4,6 +4,8 @@ import { env } from "./config/env.js";
 import { errorHandler } from "./middleware/error-handler.js";
 import { notFoundHandler } from "./middleware/not-found.js";
 
+import { authRouter } from "./modules/auth/auth.routes.js";
+
 export const app = express();
 
 app.disable("x-powered-by");
@@ -20,6 +22,8 @@ app.get("/api/health", (_request, response) => {
     service: "eventhub-api",
   });
 });
+
+app.use("/api/auth", authRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
