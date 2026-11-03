@@ -10,6 +10,8 @@ import { eventsRouter } from "./modules/events/events.routes.js";
 
 import { participantsRouter } from "./modules/participants/participants.routes.js";
 
+import { registrationsRouter } from "./modules/registrations/registrations.routes.js";
+
 export const app = express();
 
 app.disable("x-powered-by");
@@ -32,6 +34,8 @@ app.use("/api/auth", authRouter);
 app.use("/api/events", eventsRouter);
 
 app.use("/api/participants", participantsRouter);
+
+app.use("/api/registrations", registrationsRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

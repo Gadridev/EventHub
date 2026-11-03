@@ -7,7 +7,7 @@ import type { LoginInput } from "./auth.schema.js";
 
 export type AuthUser = Pick<User, "id" | "email" | "role">;
 
-// Pay the bcrypt cost for unknown emails too, reducing account timing leakage.
+
 const dummyHash = bcrypt.hashSync("unused-auth-timing-password", 12);
 
 export async function login({ email, password }: LoginInput) {
