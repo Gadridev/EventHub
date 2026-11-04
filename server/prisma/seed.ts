@@ -38,6 +38,7 @@ async function main() {
   // 2. Events
   const eventData = [
     {
+      id: "12345",
       title: "React Workshop",
       description: "Build modern applications with React.",
       location: "Casablanca",
@@ -47,6 +48,7 @@ async function main() {
       createdBy: admin.id,
     },
     {
+      id: "12345",
       title: "Node.js Conference",
       description: "Backend development with Node.js.",
       location: "Rabat",
@@ -56,6 +58,7 @@ async function main() {
       createdBy: staff.id,
     },
     {
+      id: "12345",
       title: "AI Engineering Meetup",
       description: "Introduction to AI applications and RAG.",
       location: "Marrakech",
@@ -65,6 +68,7 @@ async function main() {
       createdBy: admin.id,
     },
     {
+      id: "12345",
       title: "Cloud Computing Day",
       description: "Introduction to AWS and cloud infrastructure.",
       location: "Beni Mellal",
@@ -74,6 +78,7 @@ async function main() {
       createdBy: staff.id,
     },
     {
+      id: "12345",
       title: "Cybersecurity Workshop",
       description: "Fundamentals of web application security.",
       location: "Casablanca",
@@ -134,7 +139,7 @@ async function main() {
   }
 
   // 4. Registrations
-  const registrations  = [
+  const registrations = [
     // Published React event: 8 registrations
     ...Array.from({ length: 8 }, (_, i) => ({
       eventId: events[0].id,
