@@ -1,0 +1,77 @@
+@import "tailwindcss";
+@font-face {
+  font-family: Mulish;
+  src: url("/fonts/mulish-latin.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 200 1000;
+  font-display: swap;
+}
+@theme {
+  --font-sans: Mulish, system-ui, sans-serif;
+  --color-page: #11222d;
+  --color-sidebar: #0d1b25;
+  --color-surface: #1b3140;
+  --color-elevated: #234157;
+  --color-input: #0f1e28;
+  --color-accent: #f5b50f;
+  --color-coral: #f2573a;
+  --color-green: #12a072;
+  --color-ink: #eaf0f3;
+  --color-muted: #8fa3b0;
+  --color-border: #27435a;
+  --color-success-bg: #0f3f34;
+  --color-success: #5fe0b4;
+  --color-warning-bg: #4a3b0e;
+  --color-danger-bg: #4a1f1a;
+  --color-danger: #ff8a73;
+  --radius-card: 14px;
+}
+@layer base {
+  body {
+    @apply m-0 bg-page font-sans text-sm leading-[1.25] text-ink;
+  }
+  h1,
+  h2,
+  h3 {
+    @apply font-extrabold tracking-[-0.01em];
+  }
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    @apply outline-offset-4 focus-visible:outline-2 focus-visible:outline-accent;
+  }
+  button:not(:disabled),
+  select {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+  input,
+  select,
+  textarea {
+    color-scheme: dark;
+  }
+  th {
+    @apply border-b border-border px-3 py-2.5 text-left text-xs font-bold text-muted;
+  }
+  td {
+    @apply border-b border-border px-3 py-3 align-middle;
+  }
+  tbody tr:last-child td {
+    border-bottom: 0;
+  }
+  tbody tr:hover {
+    @apply bg-elevated/40;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+    }
+  }
+}
