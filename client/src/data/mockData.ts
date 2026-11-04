@@ -157,10 +157,4 @@ export const registrationSummary = [
   { status: "pending", count: 4 },
   { status: "cancelled", count: 2 },
 ] as const;
-export const dateLabel = (iso: string) =>
-  new Intl.DateTimeFormat("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(new Date(iso));
+export { dateLabel } from "../lib/dates";

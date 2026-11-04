@@ -1,3 +1,4 @@
+import { Button } from "./Button";
 import { AlertCircle, LoaderCircle, SearchX } from "lucide-react";
 import { fieldClass } from "./Fields";
 export type PreviewState = "ready" | "loading" | "empty" | "error";
@@ -39,9 +40,13 @@ export function StatePreview({
 export function ListState({
   state,
   noun,
+  errorMessage,
+  onRetry,
 }: {
   state: Exclude<PreviewState, "ready">;
   noun: string;
+  errorMessage?: string;
+  onRetry?: () => void;
 }) {
   const Icon =
     state === "loading"
@@ -62,15 +67,16 @@ export function ListState({
         {state === "loading"
           ? `Loading ${noun}…`
           : state === "error"
-            ? `Unable to load ${noun}.`
+            ? (errorMessage ?? `Unable to load ${noun}.`)
             : `No ${noun} match these filters.`}
       </p>
-      {state === "error" && (
+      {state === "error" && !onRetry && (
         <p className="text-xs">
           This is an error-state preview. Choose Default to return to the sample
           data.
         </p>
       )}
+      {state === "error" && onRetry && <Button onClick={onRetry}>Retry</Button>}
     </div>
   );
 }

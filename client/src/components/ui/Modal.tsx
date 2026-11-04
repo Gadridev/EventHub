@@ -29,7 +29,10 @@ export function Modal({
     <dialog
       ref={ref}
       aria-labelledby={titleId}
-      onCancel={onClose}
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
       onKeyDown={(event) => {
         if (event.key !== "Tab") return;
         const focusable = Array.from(
@@ -82,20 +85,34 @@ export function ConfirmDialog({
   description,
   onClose,
   onConfirm,
+  loading = false,
+  error,
 }: {
   title: string;
   description: string;
   onClose: () => void;
   onConfirm?: () => void;
+  loading?: boolean;
+  error?: string;
 }) {
+  function handleClose() {
+    if (!loading) onClose();
+  }
   return (
-    <Modal title={title} onClose={onClose}>
+    <Modal title={title} onClose={handleClose}>
       <p className="mb-4 text-muted">{description}</p>
       {!onConfirm && <PreviewNotice />}
+      {error && (
+        <p role="alert" className="text-danger">
+          {error}
+        </p>
+      )}
       <div className="mt-4 flex justify-end gap-2">
-        <Button onClick={onClose}>Go back</Button>
-        <Button primary disabled={!onConfirm} onClick={onConfirm}>
-          {title}
+        <Button onClick={handleClose} disabled={loading}>
+          Go back
+        </Button>
+        <Button primary disabled={!onConfirm || loading} onClick={onConfirm}>
+          {loading ? "Saving…" : title}
         </Button>
       </div>
     </Modal>
