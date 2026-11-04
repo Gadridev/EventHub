@@ -1,6 +1,9 @@
-import { Link, NavLink } from "react-router";
+import { NavLink, useNavigate } from "react-router";
+import { useAuth } from "../../features/auth/hooks/useAuth";
 import { Brand } from "./Brand";
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   return (
     <div className="flex h-full flex-col gap-1.5 bg-sidebar px-4 py-6">
       <div className="px-3 pb-5">
@@ -27,17 +30,21 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         ))}
       </nav>
       <div className="mt-auto px-3 py-3 text-[13px] text-muted">
-        admin@eventhub.ma
+        {user?.email}
         <br />
-        Admin
+        <span className="capitalize">{user?.role}</span>
         <br />
-        <Link
-          to="/login"
-          onClick={onNavigate}
+        <button
+          type="button"
+          onClick={() => {
+            onNavigate?.();
+            logout();
+            navigate("/login", { replace: true });
+          }}
           className="mt-2 inline-block text-ink hover:text-accent"
         >
-          Sign-in preview
-        </Link>
+          Logout
+        </button>
       </div>
     </div>
   );
