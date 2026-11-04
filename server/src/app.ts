@@ -11,6 +11,7 @@ import { eventsRouter } from "./modules/events/events.routes.js";
 import { participantsRouter } from "./modules/participants/participants.routes.js";
 
 import { registrationsRouter } from "./modules/registrations/registrations.routes.js";
+import { dashboardRouter } from "./modules/dashboard/dashboard.routes.js";
 
 export const app = express();
 
@@ -36,6 +37,8 @@ app.use("/api/events", eventsRouter);
 app.use("/api/participants", participantsRouter);
 
 app.use("/api/registrations", registrationsRouter);
+
+app.use("/api/dashboard", dashboardRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
