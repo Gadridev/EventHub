@@ -289,7 +289,7 @@ List endpoints use `page` and `limit` (default 1 and 10; maximum limit 100), ret
 - Events and Participants with any Registrations cannot be deleted, even if all related Registrations are cancelled.
 
 ## Database Design
-The [class diagram](#class-diagram), [Prisma schema](server/prisma/schema.prisma), and [SQL migrations](server/prisma/migrations/) describe the database relationships. No separate ERD file is currently provided.
+The [database ERD](docs/database-erd.md) documents actual column names, PostgreSQL types, keys, indexes, cardinalities, and referential actions. The [class diagram](#class-diagram), [Prisma schema](server/prisma/schema.prisma), and [SQL migrations](server/prisma/migrations/) provide additional design references.
 
 - `users`: unique email, hashed password, and role; one User creates many Events.
 
@@ -329,4 +329,4 @@ For manual evaluation, sign in, create and publish an Event, add a Participant, 
 
 - The frontend stores the JWT in localStorage for this assessment and verifies it through `/auth/me` on reload. Logout and protected API 401 responses clear the session and user-specific query cache.
 
-- The local `docs/` folder is currently ignored by Git. An assessment PDF present locally is not part of a fresh clone; no unavailable document is required by these instructions.
+- Only `docs/database-erd.md` is allowed through the `docs/` ignore rule. Other local documents, including the assessment PDF, remain ignored.
