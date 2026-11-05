@@ -1,6 +1,9 @@
 import { hash } from "bcryptjs";
 import { prisma } from "../src/lib/prisma.js";
-
+import type {
+  Event,
+  Prisma,
+} from "../src/generated/prisma/client.js";
 async function main() {
   if (process.env.NODE_ENV === "production") {
     throw new Error("Demo seed must not run in production");
@@ -34,9 +37,9 @@ async function main() {
     },
   });
 
-  const eventData = [
+  const eventData:Prisma.EventUncheckedCreateInput[] = [
     {
-      id: "12345",
+     
       title: "React Workshop",
       description: "Build modern applications with React.",
       location: "Casablanca",
@@ -46,7 +49,7 @@ async function main() {
       createdBy: admin.id,
     },
     {
-      id: "12345",
+     
       title: "Node.js Conference",
       description: "Backend development with Node.js.",
       location: "Rabat",
@@ -56,7 +59,7 @@ async function main() {
       createdBy: staff.id,
     },
     {
-      id: "12345",
+     
       title: "AI Engineering Meetup",
       description: "Introduction to AI applications and RAG.",
       location: "Marrakech",
@@ -66,7 +69,7 @@ async function main() {
       createdBy: admin.id,
     },
     {
-      id: "12345",
+     
       title: "Cloud Computing Day",
       description: "Introduction to AWS and cloud infrastructure.",
       location: "Beni Mellal",
@@ -76,7 +79,7 @@ async function main() {
       createdBy: staff.id,
     },
     {
-      id: "12345",
+     
       title: "Cybersecurity Workshop",
       description: "Fundamentals of web application security.",
       location: "Casablanca",
@@ -87,7 +90,7 @@ async function main() {
     },
   ];
 
-  const events: typeof eventData = [];
+  const events: Event[] = [];
 
   for (const data of eventData) {
     const existing = await prisma.event.findFirst({
