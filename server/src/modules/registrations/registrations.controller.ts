@@ -1,5 +1,4 @@
 import type { RequestHandler } from "express";
-import { HttpError } from "../../middleware/error-handler.js";
 import * as service from "./registrations.service.js";
 import {
   registrationIdSchema,
@@ -19,18 +18,12 @@ export const details: RequestHandler = async (req, res) => {
 };
 
 export const create: RequestHandler = async (req, res) => {
-  if (!req.user) {
-    throw new HttpError(401, "Unauthorized");
-  }
   const input = createRegistrationSchema.parse(req.body);
-  res.status(201).json({ data: await service.createRegistration(input, req.user) });
+  res.status(201).json({ data: await service.createRegistration(input) });
 };
 
 export const status: RequestHandler = async (req, res) => {
-  if (!req.user) {
-    throw new HttpError(401, "Unauthorized");
-  }
   const id = registrationIdSchema.parse(req.params.id);
   const input = registrationStatusSchema.parse(req.body);
-  res.json({ data: await service.changeRegistrationStatus(id, input.status, req.user) });
+  res.json({ data: await service.changeRegistrationStatus(id, input.status) });
 };

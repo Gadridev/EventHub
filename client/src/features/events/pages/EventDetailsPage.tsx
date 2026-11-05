@@ -14,6 +14,7 @@ import { StatusBadge } from "../../../components/ui/StatusBadge";
 import { CapacityBar } from "../../../components/ui/CapacityBar";
 import { EventFormDialog } from "../components/EventFormDialog";
 import { canManageEvent } from "../event-permissions";
+import { EventRegistrations } from "../../registrations/components/EventRegistrations";
 export function EventDetailsPage() {
   const { eventId = "" } = useParams();
   const navigate = useNavigate();
@@ -129,13 +130,10 @@ export function EventDetailsPage() {
             Back to events
           </Link>
         </section>
-        <section className="rounded-card border border-border bg-surface p-5">
-          <h2 className="text-xl">Registrations</h2>
-          <p className="py-6 text-muted">
-            Registration details are not available here yet. The capacity
-            summary uses current active registration counts.
-          </p>
-        </section>
+        <EventRegistrations
+          eventId={event.id}
+          eventStatus={event.status}
+        />
       </div>
       <section className="rounded-card border border-border bg-surface p-5">
         <h2 className="text-xl">About this event</h2>

@@ -2,7 +2,6 @@ import { Prisma } from "../../generated/prisma/client.js";
 import type { Event } from "../../generated/prisma/client.js";
 import { prisma } from "../../lib/prisma.js";
 import { HttpError } from "../../middleware/error-handler.js";
-import type { AuthUser } from "../auth/auth.service.js";
 import type {
   CreateRegistrationInput,
   RegistrationsQuery,
@@ -10,16 +9,13 @@ import type {
 } from "./registrations.schema.js";
 
 const summaries = {
-  event: { select: { id: true, title: true, eventDate: true, status: true } },
+  event: { select: { id: true, title: true, eventDate: true, status: true, createdBy: true } },
   participant: { select: { id: true, fullName: true, email: true } },
 } satisfies Prisma.RegistrationInclude;
 
-function checkEventPermission(event: Event | null, user: AuthUser): asserts event is Event {
+function requireEvent(event: Event | null): asserts event is Event {
   if (!event) {
     throw new HttpError(404, "Event not found");
-  }
-  if (user.role !== "admin" && event.createdBy !== user.id) {
-    throw new HttpError(403, "Forbidden");
   }
 }
 
@@ -68,14 +64,14 @@ export async function getRegistration(id: string) {
   return registration;
 }
 
-export async function createRegistration(input: CreateRegistrationInput, user: AuthUser) {
+export async function createRegistration(input: CreateRegistrationInput) {
   try {
     return await prisma.$transaction(async (tx) => {
       await tx.$queryRaw`
         SELECT id FROM events WHERE id = ${input.eventId}::uuid FOR UPDATE
       `;
       const event = await tx.event.findUnique({ where: { id: input.eventId } });
-      checkEventPermission(event, user);
+      requireEvent(event);
       if (event.status !== "published") {
         throw new HttpError(409, "Event is not published");
       }
@@ -116,7 +112,6 @@ export async function createRegistration(input: CreateRegistrationInput, user: A
 export async function changeRegistrationStatus(
   id: string,
   status: RegistrationStatusInput["status"],
-  user: AuthUser,
 ) {
   const existing = await prisma.registration.findUnique({
     where: { id },
@@ -132,7 +127,7 @@ export async function changeRegistrationStatus(
         SELECT id FROM events WHERE id = ${existing.eventId}::uuid FOR UPDATE
       `;
       const event = await tx.event.findUnique({ where: { id: existing.eventId } });
-      checkEventPermission(event, user);
+      requireEvent(event);
       const registration = await tx.registration.findUnique({
         where: { id },
         include: summaries,

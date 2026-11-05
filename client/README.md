@@ -1,6 +1,6 @@
 # EventHub UI Lab
 
-React + TypeScript frontend for EventHub. Authentication and Events use the Express backend; Participants, Registrations, and Dashboard still use `src/data/mockData.ts`.
+React + TypeScript frontend for EventHub. Authentication, Events, Participants, and Registrations use the Express backend. Dashboard still uses `src/data/mockData.ts`.
 
 ## Run
 
@@ -30,7 +30,7 @@ Routes: `/`, `/events`, `/events/e1`, `/participants`, `/registrations`, `/login
 - `src/index.css`: Tailwind v4 tokens and global foundations
 - `public/fonts`: locally hosted Mulish from the supplied prototype, with its license
 
-Events forms and confirmation dialogs submit to the backend. Forms in the remaining preview features stay disabled until integrated. Login stores only the access token in localStorage and redirects to Dashboard (`/`). Reload verifies the token via `/auth/me`; logout and protected API 401 responses clear the session and query cache. Use the collapsed “Preview display states” controls to inspect loading/error/empty presentations; these do not simulate network activity.
+Events, Participants, and Registrations forms and confirmation dialogs submit to the backend. Dashboard remains a preview. Login stores only the access token in localStorage and redirects to Dashboard (`/`). Reload verifies the token via `/auth/me`; logout and protected API 401 responses clear the session and query cache. Use the collapsed “Preview display states” controls to inspect loading/error/empty presentations; these do not simulate network activity.
 
 Native dialogs provide focus containment, Escape dismissal, background inertness, and focus restoration. Tables scroll horizontally on narrow screens. Main navigation becomes a modal on mobile.
 
@@ -59,3 +59,11 @@ npm run dev
 ## Events integration
 
 The Events list uses server pagination, title search, status filters, and real seat counts. Detail pages show the creator and capacity data; registration details are deferred until Registrations integration. Event dates are edited in local time and submitted as ISO timestamps. Create, update, publish, cancel, and delete invalidate the `events` query prefix and the reserved `dashboard` prefix. Authorization and conflict checks remain enforced by the backend.
+
+## Participants and Registrations
+
+Participants supports server pagination, name/email search, create, edit, and deletion. Both staff and admin can manage Participants; deletion conflicts remain visible when any registration exists.
+
+Registrations uses paginated, searchable Event and Participant selectors. Press Search (or Enter) and use Previous/Next to browse results; a selected item stays selected across pages. Creation offers published Events and disables Events owned by another staff member. Status actions follow event ownership and the backend transitions. Nested summaries supply names and ownership without per-row requests.
+
+Registration mutations invalidate `registrations`, `events`, and `dashboard` queries. Participant mutations invalidate `participants` and `dashboard`; edits also refresh registration summaries. Event edits and cancellation refresh Registrations. No Dashboard API integration is included.

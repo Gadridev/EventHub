@@ -19,7 +19,7 @@ const db = {
   event: {
     count: jest.fn<(...args: unknown[]) => Promise<number>>(),
     aggregate: jest.fn<(...args: unknown[]) => Promise<unknown>>(),
-    findMany: jest.fn<(...args: unknown[]) => Promise<unknown>>(),
+    findMany: jest.fn<(...args: unknown[]) => Promise<unknown[]>>(),
   },
   participant: { count: jest.fn<(...args: unknown[]) => Promise<number>>() },
   registration: {
@@ -65,6 +65,8 @@ describe("Dashboard authentication", () => {
       _count: { _all: true },
       _sum: { maxParticipants: true },
     });
+    expect(response.body.data).toHaveProperty("registrationsToday", 0);
+    expect(response.body.data).toHaveProperty("mostFilledEvents", []);
   });
 });
 
@@ -81,7 +83,7 @@ describe("Dashboard statistics", () => {
       { status: "confirmed", _count: { _all: 11 } },
       { status: "cancelled", _count: { _all: 3 } },
     ]);
-    db.registration.count.mockResolvedValue(17);
+    db.registration.count.mockResolvedValueOnce(17).mockResolvedValueOnce(8);
 
     const response = await request(app).get(url)
       .auth(token, { type: "bearer" }).expect(200);
@@ -90,6 +92,8 @@ describe("Dashboard statistics", () => {
       publishedEvents: 3,
       totalParticipants: 10,
       totalRegistrations: 20,
+      registrationsToday: 8,
+      mostFilledEvents: [],
       pendingRegistrations: 6,
       confirmedRegistrations: 11,
       cancelledRegistrations: 3,
@@ -100,13 +104,18 @@ describe("Dashboard statistics", () => {
     expect(db.registration.groupBy).toHaveBeenCalledWith({
       by: ["status"], _count: { _all: true },
     });
-    // No date or owner filter: utilization includes past published events too.
     expect(db.registration.count).toHaveBeenCalledWith({
       where: {
         status: { in: ["pending", "confirmed"] },
         event: { status: "published" },
       },
     });
+    const todayCount = db.registration.count.mock.calls.find(([arg]) =>
+      (arg as { where?: { createdAt?: unknown } }).where?.createdAt,
+    )?.[0] as { where: { createdAt: { gte: Date; lt: Date } } };
+    expect(todayCount.where.createdAt.gte.getUTCHours()).toBe(0);
+    expect(todayCount.where.createdAt.gte.getUTCMinutes()).toBe(0);
+    expect(todayCount.where.createdAt.lt.getTime() - todayCount.where.createdAt.gte.getTime()).toBe(24 * 60 * 60 * 1000);
   });
 
   it("counts cancelled registrations without consuming published event capacity", async () => {
@@ -121,6 +130,8 @@ describe("Dashboard statistics", () => {
       .auth(token, { type: "bearer" }).expect(200);
     expect(response.body.data).toMatchObject({
       totalRegistrations: 4,
+      registrationsToday: 0,
+      mostFilledEvents: [],
       pendingRegistrations: 0,
       confirmedRegistrations: 0,
       cancelledRegistrations: 4,
@@ -136,6 +147,8 @@ describe("Dashboard statistics", () => {
       publishedEvents: 0,
       totalParticipants: 0,
       totalRegistrations: 0,
+      registrationsToday: 0,
+      mostFilledEvents: [],
       pendingRegistrations: 0,
       confirmedRegistrations: 0,
       cancelledRegistrations: 0,
@@ -193,5 +206,36 @@ describe("Upcoming dashboard events", () => {
       activeRegistrations: active,
       availableSeats: 10 - active,
     }]);
+  });
+});
+
+describe("Most-filled dashboard events", () => {
+  it("ranks published Events by active fill percentage and returns at most five", async () => {
+    const candidates = [
+      { id: "one", title: "One", eventDate: new Date(), status: "published", maxParticipants: 10, _count: { registrations: 9 } },
+      { id: "two", title: "Two", eventDate: new Date(), status: "published", maxParticipants: 5, _count: { registrations: 4 } },
+      { id: "three", title: "Three", eventDate: new Date(), status: "published", maxParticipants: 2, _count: { registrations: 2 } },
+      { id: "four", title: "Four", eventDate: new Date(), status: "published", maxParticipants: 20, _count: { registrations: 10 } },
+      { id: "five", title: "Five", eventDate: new Date(), status: "published", maxParticipants: 10, _count: { registrations: 5 } },
+      { id: "six", title: "Six", eventDate: new Date(), status: "published", maxParticipants: 10, _count: { registrations: 1 } },
+    ];
+    db.event.findMany.mockImplementation(async (...args: unknown[]) => {
+      const query = args[0] as { where?: { eventDate?: unknown } };
+      return query.where?.eventDate ? [] : candidates;
+    });
+    const response = await request(app).get(url).auth(token, { type: "bearer" }).expect(200);
+    expect(response.body.data.mostFilledEvents.map((event: { id: string }) => event.id))
+      .toEqual(["three", "one", "two", "five", "four"]);
+    expect(response.body.data.mostFilledEvents[0]).toMatchObject({
+      activeRegistrations: 2,
+      availableSeats: 0,
+      fillPercentage: 100,
+    });
+    expect(db.event.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { status: "published" },
+      select: expect.objectContaining({
+        _count: { select: { registrations: { where: { status: { in: ["pending", "confirmed"] } } } } },
+      }),
+    }));
   });
 });

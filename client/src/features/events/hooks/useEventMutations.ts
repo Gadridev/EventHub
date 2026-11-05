@@ -20,11 +20,16 @@ export function useCreateEvent() {
 }
 
 export function useUpdateEvent() {
+  const queryClient = useQueryClient();
   const invalidateEvents = useInvalidateEvents();
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: Partial<EventInput> }) =>
       eventsApi.updateEvent(id, input),
-    onSuccess: invalidateEvents,
+    onSuccess: () =>
+      Promise.all([
+        invalidateEvents(),
+        queryClient.invalidateQueries({ queryKey: ["registrations"] }),
+      ]),
   });
 }
 
@@ -37,10 +42,15 @@ export function usePublishEvent() {
 }
 
 export function useCancelEvent() {
+  const queryClient = useQueryClient();
   const invalidateEvents = useInvalidateEvents();
   return useMutation({
     mutationFn: (id: string) => eventsApi.changeEventStatus(id, "cancelled"),
-    onSuccess: invalidateEvents,
+    onSuccess: () =>
+      Promise.all([
+        invalidateEvents(),
+        queryClient.invalidateQueries({ queryKey: ["registrations"] }),
+      ]),
   });
 }
 

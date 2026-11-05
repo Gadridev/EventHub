@@ -47,7 +47,6 @@ export function EventForm({
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (loading || !onSubmit) return;
-    // Keep the original instant (including seconds) when the date is unchanged.
     const eventDate =
       initialValues &&
       values.eventDate === toLocalDateTime(initialValues.eventDate)

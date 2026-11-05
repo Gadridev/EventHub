@@ -33,11 +33,24 @@ export async function listEvents(query: EventsQuery) {
       skip: (query.page - 1) * query.limit,
       take: query.limit,
       orderBy: [{ eventDate: "asc" }, { id: "asc" }],
+      include: {
+        _count: {
+          select: {
+            registrations: {
+              where: { status: { in: ["pending", "confirmed"] } },
+            },
+          },
+        },
+      },
     }),
     prisma.event.count({ where }),
   ]);
   return {
-    data,
+    data: data.map(({ _count, ...event }) => ({
+      ...event,
+      activeRegistrations: _count.registrations,
+      availableSeats: event.maxParticipants - _count.registrations,
+    })),
     pagination: {
       page: query.page,
       limit: query.limit,
@@ -93,7 +106,6 @@ export async function updateEvent(
     throw new HttpError(409, "Cancelled events cannot be edited");
   }
 
-  // This count and the update are separate operations, not an atomic capacity check.
   if (input.maxParticipants !== undefined) {
     const activeRegistrations = await prisma.registration.count({
       where: {

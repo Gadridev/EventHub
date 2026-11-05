@@ -135,7 +135,6 @@ export const registrations: Registration[] = registrationRows.map(
     createdAt: "2026-10-12T12:00:00Z",
   }),
 );
-// Presentation summaries supplied independently of domain records, ready for API data.
 export const eventSummaries: Record<
   string,
   { occupied: number; available: number }

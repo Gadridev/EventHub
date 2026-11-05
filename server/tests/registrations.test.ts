@@ -83,17 +83,27 @@ describe("Registration reads and validation", () => {
 
   it("filters, paginates and includes safe summaries", async () => {
     db.registration.count.mockResolvedValue(6);
+    const registrationWithSummary = {
+      ...registration,
+      event: {
+        id: event.id, title: event.title, eventDate: event.eventDate,
+        status: event.status, createdBy: event.createdBy,
+      },
+      participant: { id: registration.participantId, fullName: "Test participant", email: "participant@example.test" },
+    };
+    db.registration.findMany.mockResolvedValue([registrationWithSummary]);
     const response = await request(app).get("/api/registrations")
       .query({ ...input, status: "pending", page: 2, limit: 5 })
       .auth(token, { type: "bearer" }).expect(200);
     expect(response.body.pagination).toEqual({ page: 2, limit: 5, total: 6, totalPages: 2 });
+    expect(response.body.data[0].event.createdBy).toBe(user.id);
     expect(db.registration.findMany).toHaveBeenCalledWith({
       where: { ...input, status: "pending" },
       skip: 5,
       take: 5,
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       include: {
-        event: { select: { id: true, title: true, eventDate: true, status: true } },
+        event: { select: { id: true, title: true, eventDate: true, status: true, createdBy: true } },
         participant: { select: { id: true, fullName: true, email: true } },
       },
     });
@@ -186,18 +196,26 @@ describe("Create registration", () => {
 });
 
 describe("Registration mutation permissions", () => {
-  it.each([["admin", "other", 201], ["staff", user.id, 201], ["staff", "other", 403]] as const)("%s creating for owner %s returns %i", async (role, createdBy, status) => {
+  it.each([["admin", "other"], ["staff", user.id], ["staff", "admin-owner"], ["staff", "other-staff-owner"]] as const)("%s can register for Event owner %s", async (role, createdBy) => {
     db.user.findUnique.mockResolvedValue({ ...user, role });
     db.event.findUnique.mockResolvedValue({ ...event, createdBy });
     await request(app).post("/api/registrations")
-      .auth(token, { type: "bearer" }).send(input).expect(status);
+      .auth(token, { type: "bearer" }).send(input).expect(201);
   });
 
-  it.each([["admin", "other", 200], ["staff", user.id, 200], ["staff", "other", 403]] as const)("%s changing status for owner %s returns %i", async (role, createdBy, status) => {
+  it.each([["admin", "other"], ["staff", user.id], ["staff", "admin-owner"], ["staff", "other-staff-owner"]] as const)("%s can change registration status for Event owner %s", async (role, createdBy) => {
     db.user.findUnique.mockResolvedValue({ ...user, role });
     db.event.findUnique.mockResolvedValue({ ...event, createdBy });
     await request(app).patch(statusUrl)
-      .auth(token, { type: "bearer" }).send({ status: "confirmed" }).expect(status);
+      .auth(token, { type: "bearer" }).send({ status: "confirmed" }).expect(200);
+  });
+
+  it("allows Staff to cancel another owner's registration", async () => {
+    db.user.findUnique.mockResolvedValue({ ...user, role: "staff" });
+    db.event.findUnique.mockResolvedValue({ ...event, createdBy: "admin-owner" });
+    db.registration.findUnique.mockResolvedValue(registration);
+    await request(app).patch(statusUrl).auth(token, { type: "bearer" })
+      .send({ status: "cancelled" }).expect(200);
   });
 });
 

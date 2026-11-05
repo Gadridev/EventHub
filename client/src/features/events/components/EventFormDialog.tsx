@@ -29,7 +29,6 @@ export function EventFormDialog({
         id: event.id,
         input: {
           ...input,
-          // Omit an unchanged date, including for events that are now in the past.
           eventDate:
             input.eventDate === event.eventDate ? undefined : input.eventDate,
         },

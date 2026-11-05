@@ -45,11 +45,8 @@ export function EventActionDialog({
     try {
       await mutation.mutateAsync(event.id);
     } catch {
-      // The mutation error is displayed below; keep the dialog open for retry.
       return;
     }
-    // Deleting can unmount this dialog when detail invalidation returns 404.
-    // Awaiting the mutation still lets the page finish its navigation.
     onSuccess(action);
   }
 
