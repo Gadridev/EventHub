@@ -1,5 +1,7 @@
 # EventHub
 EventHub is an event and registration management application built with the PERN stack: PostgreSQL, Express, React, and Node.js. Admin and Staff users manage Events and Participants, register Participants from Event Details, and monitor attendance through a shared Dashboard.
+<img width="2480" height="2124" alt="eventhub-demo" src="https://github.com/user-attachments/assets/32625684-00af-4492-ac2e-a3077a11d53f" />
+
 
 ## Class Diagram
 The four domain classes and their relationships:
