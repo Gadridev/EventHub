@@ -120,7 +120,6 @@ describe("GET /api/auth/me", () => {
 });
 
 describe("role authorization", () => {
-  // Test-only routes exercise middleware without adding routes to the real app.
   const permissionsApp = express();
   permissionsApp.get("/admin", authenticate, authorize("admin"), (_req, res) =>
     res.sendStatus(200),

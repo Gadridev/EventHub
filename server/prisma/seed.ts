@@ -14,7 +14,6 @@ async function main() {
 
   const passwordHash = await hash(password, 12);
 
-  // 1. Users
   const admin = await prisma.user.upsert({
     where: { email: "admin@eventhub.test" },
     update: { role: "admin" },
@@ -35,7 +34,6 @@ async function main() {
     },
   });
 
-  // 2. Events
   const eventData = [
     {
       id: "12345",
@@ -92,7 +90,6 @@ async function main() {
   const events: typeof eventData = [];
 
   for (const data of eventData) {
-    // Event.title is not unique in our Prisma Schema.
     const existing = await prisma.event.findFirst({
       where: {
         title: data.title,
@@ -110,7 +107,6 @@ async function main() {
     events.push(event);
   }
 
-  // 3. Participants
   const participants: {
     id: string;
     email: string;
@@ -138,23 +134,19 @@ async function main() {
     participants.push(participant);
   }
 
-  // 4. Registrations
   const registrations = [
-    // Published React event: 8 registrations
     ...Array.from({ length: 8 }, (_, i) => ({
       eventId: events[0].id,
       participantId: participants[i].id,
       status: i < 5 ? ("confirmed" as const) : ("pending" as const),
     })),
 
-    // Published Node event: 7 registrations
     ...Array.from({ length: 7 }, (_, i) => ({
       eventId: events[1].id,
       participantId: participants[i].id,
       status: i < 4 ? ("confirmed" as const) : ("pending" as const),
     })),
 
-    // Cancelled event: 5 cancelled registrations
     ...Array.from({ length: 5 }, (_, i) => ({
       eventId: events[4].id,
       participantId: participants[i].id,

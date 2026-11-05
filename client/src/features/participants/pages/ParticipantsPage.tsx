@@ -1,24 +1,78 @@
-import { useState } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import type { Participant } from "../../../types";
-import { participants, dateLabel } from "../../../data/mockData";
+import type { ParticipantsQuery } from "../participants.api";
+import { useParticipants } from "../hooks/useParticipants";
+import { getApiErrorMessage } from "../../../lib/getApiErrorMessage";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import { Button } from "../../../components/ui/Button";
 import { fieldClass } from "../../../components/ui/Fields";
-import { ConfirmDialog } from "../../../components/ui/Modal";
-import { StatePreview, ListState } from "../../../components/ui/ListState";
-import type { PreviewState } from "../../../components/ui/ListState";
-import { ParticipantForm } from "../components/ParticipantForm";
+import { ListState } from "../../../components/ui/ListState";
+import { Pagination } from "../../../components/ui/Pagination";
+import { ParticipantsTable } from "../components/ParticipantsTable";
+import { ParticipantFormDialog } from "../components/ParticipantFormDialog";
+import { ParticipantDeleteDialog } from "../components/ParticipantDeleteDialog";
+
 export function ParticipantsPage() {
-  const [query, setQuery] = useState("");
+  const [search, setSearch] = useState("");
+  const [query, setQuery] = useState<ParticipantsQuery>({ page: 1, limit: 10 });
   const [form, setForm] = useState<Participant | "new" | null>(null);
-  const [remove, setRemove] = useState<Participant | null>(null);
-  const [state, setState] = useState<PreviewState>("ready");
-  const visible = participants.filter((person) =>
-    `${person.fullName} ${person.email}`
-      .toLowerCase()
-      .includes(query.toLowerCase()),
-  );
+  const [deletion, setDeletion] = useState<{
+    participant: Participant;
+    pageAfterDelete: number;
+  } | null>(null);
+  const participants = useParticipants(query);
+
+  useEffect(() => {
+    const timer = window.setTimeout(
+      () =>
+        setQuery((current) => ({ ...current, search: search.trim(), page: 1 })),
+      300,
+    );
+    return () => window.clearTimeout(timer);
+  }, [search]);
+
+  function handlePageChange(page: number) {
+    setQuery((current) => ({ ...current, page }));
+  }
+  function openDelete(participant: Participant) {
+    const pageAfterDelete =
+      participants.data?.data.length === 1
+        ? Math.max(1, query.page - 1)
+        : query.page;
+    setDeletion({ participant, pageAfterDelete });
+  }
+  function handleDeleted() {
+    if (!deletion) {
+      return;
+    }
+    handlePageChange(deletion.pageAfterDelete);
+    setDeletion(null);
+  }
+  function renderParticipants() {
+    if (participants.isPending)
+      return <ListState state="loading" noun="participants" />;
+    if (participants.isError)
+      return (
+        <ListState
+          state="error"
+          noun="participants"
+          errorMessage={getApiErrorMessage(
+            participants.error,
+            "Unable to load participants.",
+          )}
+          onRetry={() => void participants.refetch()}
+        />
+      );
+    if (participants.data.data.length === 0)
+      return <ListState state="empty" noun="participants" />;
+    return (
+      <ParticipantsTable
+        participants={participants.data.data}
+        onEdit={setForm}
+        onDelete={openDelete}
+      />
+    );
+  }
   return (
     <>
       <PageHeader
@@ -33,76 +87,30 @@ export function ParticipantsPage() {
         aria-label="Search participants"
         placeholder="Search name or email"
         className={`${fieldClass} max-w-[360px]`}
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
+        value={search}
+        onChange={(event) => setSearch(event.target.value)}
       />
-      {state === "ready" && visible.length ? (
-        <div className="relative overflow-x-auto rounded-card border border-border bg-surface">
-          <table className="w-full min-w-[800px] border-collapse [&_td]:py-2">
-            <caption className="sr-only">Participant directory</caption>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Created</th>
-                <th>
-                  <span className="sr-only">Actions</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {visible.map((person) => (
-                <tr key={person.id}>
-                  <td>{person.fullName}</td>
-                  <td>{person.email}</td>
-                  <td className="whitespace-nowrap text-muted">
-                    {person.phone ?? "—"}
-                  </td>
-                  <td className="whitespace-nowrap">
-                    {dateLabel(person.createdAt)}
-                  </td>
-                  <td>
-                    <div className="flex justify-end gap-1">
-                      <Button
-                        aria-label={`Edit ${person.fullName}`}
-                        onClick={() => setForm(person)}
-                        className="!min-h-7 !p-1.5"
-                      >
-                        <Pencil size={14} />
-                      </Button>
-                      <Button
-                        aria-label={`Delete ${person.fullName}`}
-                        onClick={() => setRemove(person)}
-                        className="!min-h-7 !p-1.5"
-                      >
-                        <Trash2 size={14} />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <ListState
-          state={state === "ready" ? "empty" : state}
+      {renderParticipants()}
+      {participants.data && (
+        <Pagination
+          {...participants.data.pagination}
           noun="participants"
+          loading={participants.isFetching}
+          onPageChange={handlePageChange}
         />
       )}
-      <StatePreview value={state} onChange={setState} />
       {form && (
-        <ParticipantForm
-          initialValues={form === "new" ? undefined : form}
+        <ParticipantFormDialog
+          key={form === "new" ? "new" : form.id}
+          participant={form === "new" ? undefined : form}
           onClose={() => setForm(null)}
         />
       )}
-      {remove && (
-        <ConfirmDialog
-          title="Delete participant"
-          description={`Review deletion of ${remove.fullName}. This preview does not delete any records.`}
-          onClose={() => setRemove(null)}
+      {deletion && (
+        <ParticipantDeleteDialog
+          participant={deletion.participant}
+          onClose={() => setDeletion(null)}
+          onDeleted={handleDeleted}
         />
       )}
     </>

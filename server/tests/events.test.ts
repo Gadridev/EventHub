@@ -59,7 +59,9 @@ beforeEach(() => {
   jest.resetAllMocks();
   db.user.findUnique.mockResolvedValue(user);
   db.event.findUnique.mockResolvedValue(original);
-  db.event.findMany.mockResolvedValue([original]);
+  db.event.findMany.mockResolvedValue([
+    { ...original, _count: { registrations: 3 } },
+  ]);
   db.event.count.mockResolvedValue(1);
   db.event.create.mockResolvedValue(original);
   db.event.update.mockResolvedValue(original);
@@ -76,6 +78,12 @@ describe("Events CRUD and validation", () => {
       .get("/api/events?search=work&status=draft&page=2&limit=5")
       .auth(token, { type: "bearer" })
       .expect(200);
+    expect(res.body.data[0]).toMatchObject({
+      id,
+      activeRegistrations: 3,
+      availableSeats: 17,
+    });
+    expect(res.body.data[0]).not.toHaveProperty("_count");
     expect(res.body.pagination).toEqual({
       page: 2,
       limit: 5,
@@ -90,6 +98,15 @@ describe("Events CRUD and validation", () => {
       skip: 5,
       take: 5,
       orderBy: [{ eventDate: "asc" }, { id: "asc" }],
+      include: {
+        _count: {
+          select: {
+            registrations: {
+              where: { status: { in: ["pending", "confirmed"] } },
+            },
+          },
+        },
+      },
     });
   });
   it("returns details and available seats", async () => {

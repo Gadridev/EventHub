@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [logout]);
 
    function login(email: string, password: string) {
-     loginMutation.mutateAsync({ email, password });
+     loginMutation.mutate({ email, password });
   }
 
   async function retryVerification() {

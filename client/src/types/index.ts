@@ -30,3 +30,10 @@ export interface Registration {
   status: RegistrationStatus;
   createdAt: string;
 }
+
+export type PaginationData = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+};

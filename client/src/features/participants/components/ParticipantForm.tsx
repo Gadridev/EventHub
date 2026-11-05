@@ -1,6 +1,7 @@
 import { useState } from "react";
+import type { FormEvent } from "react";
 import type { Participant } from "../../../types";
-import { Modal, PreviewNotice } from "../../../components/ui/Modal";
+import { Modal } from "../../../components/ui/Modal";
 import { Input } from "../../../components/ui/Fields";
 import { Button } from "../../../components/ui/Button";
 export type ParticipantFormValues = Pick<
@@ -16,25 +17,37 @@ export function ParticipantForm({
 }: {
   initialValues?: ParticipantFormValues;
   onClose: () => void;
-  onSubmit?: (values: ParticipantFormValues) => void;
+  onSubmit: (values: ParticipantFormValues) => void;
   loading?: boolean;
   error?: string;
 }) {
   const [values, setValues] = useState<ParticipantFormValues>(
-    initialValues ?? { fullName: "", email: "", phone: null },
+    initialValues
+      ? {
+          fullName: initialValues.fullName,
+          email: initialValues.email,
+          phone: initialValues.phone,
+        }
+      : { fullName: "", email: "", phone: null },
   );
+  function handleClose() {
+    if (!loading) {
+      onClose();
+    }
+  }
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (loading) {
+      return;
+    }
+    onSubmit(values);
+  }
   return (
     <Modal
       title={initialValues ? "Edit participant" : "Add participant"}
-      onClose={onClose}
+      onClose={handleClose}
     >
-      <form
-        className="flex flex-col gap-4"
-        onSubmit={(e) => {
-          e.preventDefault();
-          onSubmit?.(values);
-        }}
-      >
+      <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
         <Input
           label="Full name"
           required
@@ -61,10 +74,11 @@ export function ParticipantForm({
             {error}
           </p>
         )}
-        {!onSubmit && <PreviewNotice />}
         <div className="flex justify-end gap-2">
-          <Button onClick={onClose}>Cancel</Button>
-          <Button primary type="submit" disabled={!onSubmit || loading}>
+          <Button onClick={handleClose} disabled={loading}>
+            Cancel
+          </Button>
+          <Button primary type="submit" disabled={loading}>
             {loading ? "Saving…" : "Save participant"}
           </Button>
         </div>

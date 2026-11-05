@@ -1,4 +1,6 @@
 import { useState } from "react";
+import type { FormEvent } from "react";
+import { toLocalDateTime, toIsoDateTime } from "../../../lib/dates";
 import type { Event } from "../../../types";
 import { Modal, PreviewNotice } from "../../../components/ui/Modal";
 import { Input, Textarea } from "../../../components/ui/Fields";
@@ -22,23 +24,43 @@ export function EventForm({
   error,
 }: EventFormProps) {
   const [values, setValues] = useState(
-    initialValues ?? {
-      title: "",
-      description: "",
-      location: "",
-      eventDate: "",
-      maxParticipants: 50,
-    },
+    initialValues
+      ? {
+          title: initialValues.title,
+          description: initialValues.description,
+          location: initialValues.location,
+          maxParticipants: initialValues.maxParticipants,
+          eventDate: toLocalDateTime(initialValues.eventDate),
+        }
+      : {
+          title: "",
+          description: "",
+          location: "",
+          eventDate: "",
+          maxParticipants: 50,
+        },
   );
+  function handleClose() {
+    if (!loading) onClose();
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (loading || !onSubmit) return;
+    const eventDate =
+      initialValues &&
+      values.eventDate === toLocalDateTime(initialValues.eventDate)
+        ? initialValues.eventDate
+        : toIsoDateTime(values.eventDate);
+    onSubmit({ ...values, eventDate });
+  }
+
   return (
-    <Modal title={initialValues ? "Edit event" : "New event"} onClose={onClose}>
-      <form
-        className="flex flex-col gap-3"
-        onSubmit={(e) => {
-          e.preventDefault();
-          onSubmit?.(values);
-        }}
-      >
+    <Modal
+      title={initialValues ? "Edit event" : "New event"}
+      onClose={handleClose}
+    >
+      <form className="flex flex-col gap-3" onSubmit={handleSubmit}>
         <Input
           label="Title"
           required
@@ -53,6 +75,7 @@ export function EventForm({
         />
         <Textarea
           label="Description"
+          required
           value={values.description}
           onChange={(e) =>
             setValues({ ...values, description: e.target.value })
@@ -60,14 +83,14 @@ export function EventForm({
         />
         <div className="grid gap-3 sm:grid-cols-2">
           <Input
-            label="Event date (UTC)"
+            label="Event date (local time)"
             type="datetime-local"
             required
-            value={values.eventDate.slice(0, 16)}
+            value={values.eventDate}
             onChange={(e) =>
               setValues({
                 ...values,
-                eventDate: e.target.value ? `${e.target.value}:00Z` : "",
+                eventDate: e.target.value,
               })
             }
           />
@@ -92,7 +115,9 @@ export function EventForm({
         )}
         {!onSubmit && <PreviewNotice />}
         <div className="flex justify-end gap-2">
-          <Button onClick={onClose}>Cancel</Button>
+          <Button onClick={handleClose} disabled={loading}>
+            Cancel
+          </Button>
           <Button primary type="submit" disabled={!onSubmit || loading}>
             {loading
               ? "Saving…"

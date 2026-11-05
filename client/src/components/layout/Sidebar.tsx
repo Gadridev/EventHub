@@ -13,7 +13,6 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         {[
           ["/", "Overview"],
           ["/events", "Events"],
-          ["/registrations", "Registrations"],
           ["/participants", "Participants"],
         ].map(([path, label]) => (
           <NavLink

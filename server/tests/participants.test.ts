@@ -43,7 +43,6 @@ const db = {
   },
 };
 
-// Mock before importing the app so no real database client is constructed.
 jest.unstable_mockModule("../src/lib/prisma.js", () => ({ prisma: db }));
 const { app } = await import("../src/app.js");
 

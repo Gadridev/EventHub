@@ -1,19 +1,20 @@
 import { Link } from "react-router";
 import { Pencil } from "lucide-react";
-import type { Event } from "../../../types";
-import { dateLabel } from "../../../data/mockData";
+import type { EventWithSeats } from "../events.api";
+import type { EventAction } from "./EventActionDialog";
+import { dateLabel } from "../../../lib/dates";
 import { Button } from "../../../components/ui/Button";
 import { StatusBadge } from "../../../components/ui/StatusBadge";
 import { CapacityBar } from "../../../components/ui/CapacityBar";
 interface EventsTableProps {
-  events: Event[];
-  summaries: Record<string, { occupied: number }>;
-  onEdit: (event: Event) => void;
-  onAction: (action: string, event: Event) => void;
+  events: EventWithSeats[];
+  canManage: (event: EventWithSeats) => boolean;
+  onEdit: (event: EventWithSeats) => void;
+  onAction: (action: EventAction, event: EventWithSeats) => void;
 }
 export function EventsTable({
   events,
-  summaries,
+  canManage,
   onEdit,
   onAction,
 }: EventsTableProps) {
@@ -53,37 +54,39 @@ export function EventsTable({
                 <StatusBadge status={event.status} />
               </td>
               <td className="min-w-[160px]">
-                {summaries[event.id]?.occupied ?? 0}/{event.maxParticipants}
+                {event.activeRegistrations}/{event.maxParticipants}
                 <CapacityBar
-                  used={summaries[event.id]?.occupied ?? 0}
+                  used={event.activeRegistrations}
                   capacity={event.maxParticipants}
                 />
               </td>
               <td>
                 <div className="flex justify-end gap-1">
-                  <Button
-                    aria-label={`Edit ${event.title}`}
-                    onClick={() => onEdit(event)}
-                    className="!px-2"
-                  >
-                    <Pencil size={14} />
-                  </Button>
-                  {event.status === "draft" && (
-                    <>
-                      <Button onClick={() => onAction("Publish event", event)}>
-                        Publish
-                      </Button>
-                      <Button onClick={() => onAction("Delete event", event)}>
-                        Delete
-                      </Button>
-                    </>
+                  {canManage(event) && event.status !== "cancelled" && (
+                    <Button
+                      aria-label={`Edit ${event.title}`}
+                      onClick={() => onEdit(event)}
+                      className="!px-2"
+                    >
+                      <Pencil size={14} />
+                    </Button>
                   )}
-                  {event.status === "published" && (
+                  {canManage(event) && event.status === "draft" && (
+                    <Button onClick={() => onAction("publish", event)}>
+                      Publish
+                    </Button>
+                  )}
+                  {canManage(event) && event.status !== "cancelled" && (
                     <Button
                       className="whitespace-nowrap"
-                      onClick={() => onAction("Cancel event", event)}
+                      onClick={() => onAction("cancel", event)}
                     >
                       Cancel event
+                    </Button>
+                  )}
+                  {canManage(event) && (
+                    <Button onClick={() => onAction("delete", event)}>
+                      Delete
                     </Button>
                   )}
                 </div>

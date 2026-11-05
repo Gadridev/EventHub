@@ -1,6 +1,9 @@
 import { prisma } from "../../lib/prisma.js";
 
 export async function getDashboardStats() {
+  const now = new Date();
+  const todayStartUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const tomorrowStartUtc = new Date(todayStartUtc.getTime() + 24 * 60 * 60 * 1000);
   const [
     totalEvents,
     publishedEventTotals,
@@ -8,6 +11,8 @@ export async function getDashboardStats() {
     registrationCounts,
     activePublishedRegistrations,
     upcomingEvents,
+    registrationsToday,
+    fillCandidates,
   ] = await Promise.all([
     prisma.event.count(),
     prisma.event.aggregate({
@@ -45,6 +50,25 @@ export async function getDashboardStats() {
         },
       },
     }),
+    prisma.registration.count({
+      where: {
+        createdAt: {
+          gte: todayStartUtc,
+          lt: tomorrowStartUtc,
+        },
+      },
+    }),
+    prisma.event.findMany({
+      where: { status: "published" },
+      select: {
+        id: true,
+        title: true,
+        eventDate: true,
+        status: true,
+        maxParticipants: true,
+        _count: { select: { registrations: { where: { status: { in: ["pending", "confirmed"] } } } } },
+      },
+    }),
   ]);
 
   const registrationsByStatus = { pending: 0, confirmed: 0, cancelled: 0 };
@@ -57,6 +81,18 @@ export async function getDashboardStats() {
     totalCapacity === 0
       ? 0
       : Math.round((activePublishedRegistrations / totalCapacity) * 1000) / 10;
+  const mostFilledEvents = fillCandidates
+    .map(({ _count, ...event }) => {
+      const activeRegistrations = _count.registrations;
+      return {
+        ...event,
+        activeRegistrations,
+        availableSeats: event.maxParticipants - activeRegistrations,
+        fillPercentage: event.maxParticipants === 0 ? 0 : Math.round((activeRegistrations / event.maxParticipants) * 1000) / 10,
+      };
+    })
+    .sort((first, second) => second.fillPercentage - first.fillPercentage || first.id.localeCompare(second.id))
+    .slice(0, 5);
 
   return {
     totalEvents,
@@ -70,6 +106,8 @@ export async function getDashboardStats() {
     confirmedRegistrations: registrationsByStatus.confirmed,
     cancelledRegistrations: registrationsByStatus.cancelled,
     seatUtilization,
+    registrationsToday,
+    mostFilledEvents,
     upcomingEvents: upcomingEvents.map(({ _count, ...event }) => ({
       ...event,
       activeRegistrations: _count.registrations,

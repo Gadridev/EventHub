@@ -24,7 +24,6 @@ api.interceptors.response.use(
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       const token = getAccessToken();
       const isLogin = error.config?.url === "/auth/login";
-      // Ignore late failures from an older session and repeated 401 responses.
       if (
         !isLogin &&
         token &&

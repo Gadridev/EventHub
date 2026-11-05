@@ -4,7 +4,6 @@ import { DashboardPage } from "../features/dashboard/pages/DashboardPage";
 import { EventsPage } from "../features/events/pages/EventsPage";
 import { EventDetailsPage } from "../features/events/pages/EventDetailsPage";
 import { ParticipantsPage } from "../features/participants/pages/ParticipantsPage";
-import { RegistrationsPage } from "../features/registrations/pages/RegistrationsPage";
 import { LoginPage } from "../features/auth/pages/LoginPage";
 import { ProtectedRoute } from "../features/auth/ProtectedRoute";
 import { PublicOnlyRoute } from "../features/auth/PublicOnlyRoute";
@@ -23,7 +22,6 @@ export const router = createBrowserRouter([
           { path: "/events", element: <EventsPage /> },
           { path: "/events/:eventId", element: <EventDetailsPage /> },
           { path: "/participants", element: <ParticipantsPage /> },
-          { path: "/registrations", element: <RegistrationsPage /> },
           {
             path: "*",
             element: (

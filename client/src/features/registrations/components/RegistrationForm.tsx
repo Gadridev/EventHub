@@ -1,75 +1,51 @@
 import { useState } from "react";
-import type { Event, Participant } from "../../../types";
-import { Select } from "../../../components/ui/Fields";
+import type { FormEvent } from "react";
 import { Button } from "../../../components/ui/Button";
-import { ConfirmDialog } from "../../../components/ui/Modal";
-export interface RegistrationFormValues {
-  participantId: string;
-  eventId: string;
-}
+import { Modal } from "../../../components/ui/Modal";
+import type { Selection } from "../../../components/ui/PagedSelect";
+import type { RegistrationInput } from "../registrations.api";
+import { ParticipantPicker } from "./ParticipantPicker";
+
 export function RegistrationForm({
-  events,
-  participants,
   onSubmit,
+  onClose,
+  eventId,
+  submitting = false,
+  error,
 }: {
-  events: Event[];
-  participants: Participant[];
-  onSubmit?: (values: RegistrationFormValues) => void;
+  onSubmit: (values: RegistrationInput) => void;
+  onClose: () => void;
+  eventId: string;
+  submitting?: boolean;
+  error?: string;
 }) {
-  const [values, setValues] = useState({
-    participantId: participants[0]?.id ?? "",
-    eventId: events[0]?.id ?? "",
-  });
-  const [confirm, setConfirm] = useState(false);
+  const [participant, setParticipant] = useState<Selection | null>(null);
+
+  function handleSubmit(submission: FormEvent<HTMLFormElement>) {
+    submission.preventDefault();
+    if (!participant) {
+      return;
+    }
+    onSubmit({ participantId: participant.id, eventId });
+  }
   return (
-    <>
-      <form
-        className="flex flex-wrap items-end gap-3 rounded-card border border-border bg-surface p-5"
-        onSubmit={(e) => {
-          e.preventDefault();
-          setConfirm(true);
-        }}
-      >
-        <div className="flex-[1_1_200px]">
-          <Select
-            label="Participant"
-            value={values.participantId}
-            onChange={(e) =>
-              setValues({ ...values, participantId: e.target.value })
-            }
-          >
-            {participants.map((person) => (
-              <option key={person.id} value={person.id}>
-                {person.fullName}
-              </option>
-            ))}
-          </Select>
+    <Modal title="New registration" onClose={onClose}>
+      <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+        <ParticipantPicker selected={participant} onChange={setParticipant} />
+        {error && (
+          <p role="alert" className="text-sm text-danger">
+            {error}
+          </p>
+        )}
+        <div className="mt-2 flex justify-end gap-2">
+          <Button type="button" onClick={onClose} disabled={submitting}>
+            Cancel
+          </Button>
+          <Button primary type="submit" disabled={!participant || submitting}>
+            {submitting ? "Registering…" : "Register participant"}
+          </Button>
         </div>
-        <div className="flex-[1_1_200px]">
-          <Select
-            label="Event"
-            value={values.eventId}
-            onChange={(e) => setValues({ ...values, eventId: e.target.value })}
-          >
-            {events.map((event) => (
-              <option key={event.id} value={event.id}>
-                {event.title} ({event.status})
-              </option>
-            ))}
-          </Select>
-        </div>
-        <Button primary type="submit">
-          Register participant
-        </Button>
       </form>
-      {confirm && (
-        <ConfirmDialog
-          title="Register participant"
-          description={`${participants.find((person) => person.id === values.participantId)?.fullName} — ${events.find((event) => event.id === values.eventId)?.title}`}
-          onClose={() => setConfirm(false)}
-          onConfirm={onSubmit ? () => onSubmit(values) : undefined}
-        />
-      )}
-    </>
+    </Modal>
   );
 }
